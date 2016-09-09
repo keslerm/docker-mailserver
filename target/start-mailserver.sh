@@ -231,7 +231,7 @@ touch /etc/postfix/vmailbox && postmap /etc/postfix/vmailbox
 touch /etc/postfix/virtual && postmap /etc/postfix/virtual
 
 # PERMIT_DOCKER Option
-container_ip=$(ip addr show eth0 | grep 'inet ' | sed 's/[^0-9\.\/]*//g' | cut -d '/' -f 1)
+container_ip=$(ip addr show eth0 | grep 'inet 172\.' | sed 's/[^0-9\.\/]*//g' | cut -d '/' -f 1)
 container_network="$(echo $container_ip | cut -d '.' -f1-2).0.0"
 case $PERMIT_DOCKER in
   "host" )
@@ -283,7 +283,7 @@ if [ ! -z "$AWS_SES_HOST" -a ! -z "$AWS_SES_USERPASS" ]; then
   echo "Setting up outgoing email via AWS SES host $AWS_SES_HOST:$AWS_SES_PORT"
   echo "[$AWS_SES_HOST]:$AWS_SES_PORT $AWS_SES_USERPASS" >>/etc/postfix/sasl_passwd
   postconf -e \
-    "relayhost = [$AWS_SES_HOST]:25" \
+    "relayhost = [$AWS_SES_HOST]:$AWS_SES_PORT" \
     "smtp_sasl_auth_enable = yes" \
     "smtp_sasl_security_options = noanonymous" \
     "smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd" \
@@ -379,6 +379,7 @@ if [ "$ENABLE_POP3" = 1 -a "$SMTP_ONLY" != 1 ]; then
 fi
 
 if [ -f /tmp/docker-mailserver/dovecot.cf ]; then
+  echo 'Adding file "dovecot.cf" to the Dovecot configuration'
   cp /tmp/docker-mailserver/dovecot.cf /etc/dovecot/local.conf
   /usr/sbin/dovecot reload
 fi
@@ -391,9 +392,6 @@ if [ "$ENABLE_FETCHMAIL" = 1 ]; then
 fi
 
 # Start services related to SMTP
-if ! [ "$DISABLE_SPAMASSASSIN" = 1 ]; then
-  /etc/init.d/spamassassin start
-fi
 if ! [ "$DISABLE_CLAMAV" = 1 ]; then
   /etc/init.d/clamav-daemon start
 fi
