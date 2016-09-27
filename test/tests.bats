@@ -550,6 +550,10 @@
   [ "$status" -eq 1 ]
   run docker exec mail grep ': error:' /var/log/mail/mail.log
   [ "$status" -eq 1 ]
+  run docker exec mail grep -i 'is not writable' /var/log/mail/mail.log
+  [ "$status" -eq 1 ]
+  run docker exec mail grep -i 'permission denied' /var/log/mail/mail.log
+  [ "$status" -eq 1 ]
   run docker exec mail_pop3 grep 'non-null host address bits in' /var/log/mail/mail.log
   [ "$status" -eq 1 ]
   run docker exec mail_pop3 grep ': error:' /var/log/mail/mail.log
@@ -566,6 +570,11 @@
   run docker exec mail cat /etc/mailname
   [ "$status" -eq 0 ]
   [ "$output" = "my-domain.com" ]
+}
+
+@test "checking system: postfix should not log to syslog" {
+  run docker exec mail grep 'postfix' /var/log/syslog
+  [ "$status" -eq 1 ]
 }
 
 #
